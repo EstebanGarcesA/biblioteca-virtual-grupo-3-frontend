@@ -1,6 +1,7 @@
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import './Home.css';
+
 const Home = () => {
     return (
         <main className="home">
