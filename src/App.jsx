@@ -6,6 +6,7 @@ import BookDetail from './pages/BookDetail';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import './App.css';
+import PrivateRoute from './router/PrivateRoute';
 
 const App = () => {
   return (
@@ -13,10 +14,18 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/catalogo" element={<Catalog />} />
-          <Route path="/detalle/:id" element={<BookDetail />} />
+          <Route path="/catalog" element={<Catalog />} />
+          <Route
+            path="/detalle/:id"
+            element={
+              <PrivateRoute>
+                <BookDetail />
+              </PrivateRoute>
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/blog" element={<div>Próximamente</div>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

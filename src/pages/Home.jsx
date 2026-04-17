@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { fetchBookData } from '../services/bookService';
 import './Home.css';
+import { Link } from 'react-router-dom';
 
 
 const getBookImage = (book) => {
@@ -76,13 +77,13 @@ const Home = () => {
             <div className="hero-actions">
               {!isLoggedIn ? (
                 <>
-                  <a href="/login.html" className="btn btn-primary btn-hero">Iniciar sesión</a>
+                  <Link to="/login" className="btn btn-primary btn-hero">Iniciar sesión</Link>
                   <button className="btn btn-secondary btn-ghost" onClick={() => setIsLoggedIn(true)}>
                     Simular inicio
                   </button>
                 </>
               ) : (
-                <a href="/perfilusuario.html" className="btn btn-primary btn-hero">Ir a perfil</a>
+                <Link to="/perfil" className="btn btn-primary btn-hero">Ir a perfil</Link>
               )}
             </div>
           </div>
@@ -146,7 +147,9 @@ const Home = () => {
             )}
           </div>
           <div className="center-row">
-            <a href="#catalog" className="btn btn-primary btn-hero">Ver catálogo completo</a>
+            <Link to="/catalog" className="btn btn-primary btn-hero">
+              Ver catálogo completo
+            </Link>
           </div>
         </div>
       </section>
@@ -159,7 +162,7 @@ const Home = () => {
             <p>
               Conoce las voces detrás de cada libro y descubre recomendaciones que te acompañarán en cada lectura.
             </p>
-            <a href="#blog" className="btn btn-primary">Leer más</a>
+            <Link to="/blog" className="btn btn-primary">Leer más</Link>
           </div>
           <div className="story-artwork"></div>
         </div>

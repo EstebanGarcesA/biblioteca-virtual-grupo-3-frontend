@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../contexts/AuthContext';
 import './BookDetail.css';
 
+
+
 const BookDetail = () => {
   const { id } = useParams();
   const location = useLocation();
@@ -105,6 +107,15 @@ const BookDetail = () => {
   return (
     <main className="detail-page">
       <Navbar />
+      <div className="container mt-3">
+  <button
+    type="button"
+    className="btn btn-outline-secondary"
+    onClick={() => navigate('/catalogo')}
+  >
+    ← Volver al catálogo
+  </button>
+</div>
       <section className="detail-hero container py-5">
         {loading ? (
           <p>Cargando información del libro...</p>
