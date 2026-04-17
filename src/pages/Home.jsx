@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { fetchBookData } from '../services/bookService';
+import { useAuth } from '../contexts/AuthContext';
 import './Home.css';
-import { Link } from 'react-router-dom';
 
 
 const getBookImage = (book) => {
@@ -21,7 +22,7 @@ const getBookImage = (book) => {
 };
 
 const Home = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLogged, login } = useAuth();
   const [featuredBooks, setFeaturedBooks] = useState([]);
   const [booksError, setBooksError] = useState(null);
   const [loadingBooks, setLoadingBooks] = useState(true);
@@ -63,7 +64,7 @@ const Home = () => {
 
   return (
     <main className="home" id="home">
-      <Navbar isLoggedIn={isLoggedIn} />
+      <Navbar />
 
       <section className="hero-section">
         <div className="hero-container">
@@ -75,10 +76,10 @@ const Home = () => {
               Encuentra tu próxima historia favorita con estilo y facilidad.
             </p>
             <div className="hero-actions">
-              {!isLoggedIn ? (
+              {!isLogged ? (
                 <>
                   <Link to="/login" className="btn btn-primary btn-hero">Iniciar sesión</Link>
-                  <button className="btn btn-secondary btn-ghost" onClick={() => setIsLoggedIn(true)}>
+                  <button className="btn btn-secondary btn-ghost" onClick={() => login('demo@biblioteca.com')}>
                     Simular inicio
                   </button>
                 </>

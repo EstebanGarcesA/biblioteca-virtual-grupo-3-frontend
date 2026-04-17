@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { createUniqueSlug, saveCustomPost } from '../helpers/blogStorage';
-import { getCurrentUser } from '../helpers/demoAuth';
 import './CreatePost.css';
 
 const initialForm = {
@@ -13,7 +13,6 @@ const initialForm = {
   excerpt: '',
   subtitle: '',
   intro: '',
-  content: '',
   closing: '',
   image: '',
 };
@@ -21,11 +20,15 @@ const initialForm = {
 const CreatePostPage = () => {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
+  const [blocks, setBlocks] = useState([
+    { id: 1, type: 'paragraph', text: '' },
+  ]);
+  const [blockIndex, setBlockIndex] = useState(2);
   const navigate = useNavigate();
-  const currentUser = getCurrentUser();
+  const { user, isLogged } = useAuth();
 
-  if (!currentUser) {
-    return null;
+  if (!isLogged) {
+    return <Navigate replace to="/login" />;
   }
 
   const handleChange = (event) => {
@@ -63,6 +66,44 @@ const CreatePostPage = () => {
     reader.readAsDataURL(file);
   };
 
+  const addBlock = (type) => {
+    setBlocks((current) => [
+      ...current,
+      { id: blockIndex, type, text: '', image: '' },
+    ]);
+    setBlockIndex((current) => current + 1);
+  };
+
+  const updateBlock = (id, changes) => {
+    setBlocks((current) =>
+      current.map((block) => (block.id === id ? { ...block, ...changes } : block)),
+    );
+  };
+
+  const removeBlock = (id) => {
+    setBlocks((current) => current.filter((block) => block.id !== id));
+  };
+
+  const handleBlockImageChange = (id, event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      updateBlock(id, { image: '' });
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setError('Selecciona un archivo de imagen valido.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setError('');
+      updateBlock(id, { image: typeof reader.result === 'string' ? reader.result : '' });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
 
@@ -71,20 +112,19 @@ const CreatePostPage = () => {
       form.excerpt,
       form.subtitle,
       form.intro,
-      form.content,
     ];
 
-    if (requiredFields.some((field) => !field.trim())) {
-      setError('Completa titulo, resumen, subtitulo, introduccion y contenido.');
+    const cleanedBlocks = blocks.filter(
+      (block) =>
+        block.type === 'image' ? Boolean(block.image) : Boolean(block.text.trim()),
+    );
+
+    if (requiredFields.some((field) => !field.trim()) || cleanedBlocks.length === 0) {
+      setError('Completa título, resumen, subtítulo, introducción y al menos un bloque de contenido.');
       return;
     }
 
     const slug = createUniqueSlug(form.title);
-    const paragraphs = form.content
-      .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.trim())
-      .filter(Boolean);
-
     const post = {
       slug,
       title: form.title.trim(),
@@ -94,11 +134,11 @@ const CreatePostPage = () => {
       kicker: 'Creado por el equipo',
       subtitle: form.subtitle.trim(),
       intro: form.intro.trim(),
-      paragraphs,
+      contentBlocks: cleanedBlocks,
       closing: form.closing.trim() || 'Gracias por compartir tu lectura con la comunidad.',
       image: form.image,
-      authorId: currentUser.id,
-      authorName: currentUser.name,
+      authorId: user.id,
+      authorName: user.name,
       books: [],
       isCustom: true,
     };
@@ -120,7 +160,7 @@ const CreatePostPage = () => {
             guardara en este navegador y aparecera de inmediato en el listado
             principal.
           </p>
-          <p className="create-post-author">Publicando como: {currentUser.name}</p>
+          <p className="create-post-author">Publicando como: {user.name}</p>
         </div>
 
         <form className="create-post-form" onSubmit={handleSubmit}>
@@ -201,16 +241,46 @@ const CreatePostPage = () => {
               />
             </label>
 
-            <label className="create-post-field create-post-field--full">
+            <div className="create-post-field create-post-field--full">
               <span>Contenido del articulo</span>
-              <textarea
-                name="content"
-                rows="10"
-                value={form.content}
-                onChange={handleChange}
-                placeholder="Escribe el contenido principal. Separa parrafos con una linea en blanco."
-              />
-            </label>
+              <div className="create-post-blocks">
+                <div className="create-post-blocks-actions">
+                  <button type="button" onClick={() => addBlock('paragraph')} className="btn btn-outline-secondary btn-sm">
+                    Añadir párrafo
+                  </button>
+                  <button type="button" onClick={() => addBlock('image')} className="btn btn-outline-secondary btn-sm">
+                    Añadir imagen
+                  </button>
+                </div>
+                {blocks.map((block) => (
+                  <div className="create-post-block" key={block.id}>
+                    <div className="create-post-block-header">
+                      <span>{block.type === 'paragraph' ? 'Párrafo' : 'Imagen'} #{block.id}</span>
+                      <button type="button" className="btn btn-sm btn-link text-danger" onClick={() => removeBlock(block.id)}>
+                        Eliminar
+                      </button>
+                    </div>
+                    {block.type === 'paragraph' ? (
+                      <textarea
+                        rows="5"
+                        value={block.text}
+                        onChange={(event) => updateBlock(block.id, { text: event.target.value })}
+                        placeholder="Escribe un párrafo del artículo"
+                      />
+                    ) : (
+                      <>
+                        <input type="file" accept="image/*" onChange={(event) => handleBlockImageChange(block.id, event)} />
+                        {block.image ? (
+                          <div className="create-post-image-preview">
+                            <img src={block.image} alt={`Vista previa bloque ${block.id}`} />
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <label className="create-post-field create-post-field--full">
               <span>Cierre</span>

@@ -20,7 +20,12 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const login = (email) => {
-    const nextUser = { email, name: email.split('@')[0] || 'Usuario' };
+    const userId = email.trim().toLowerCase();
+    const nextUser = {
+      id: userId,
+      email,
+      name: email.split('@')[0] || 'Usuario',
+    };
     setUser(nextUser);
   };
 

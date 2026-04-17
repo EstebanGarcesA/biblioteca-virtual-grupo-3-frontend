@@ -108,14 +108,14 @@ const BookDetail = () => {
     <main className="detail-page">
       <Navbar />
       <div className="container mt-3">
-  <button
-    type="button"
-    className="btn btn-outline-secondary"
-    onClick={() => navigate('/catalogo')}
-  >
-    ← Volver al catálogo
-  </button>
-</div>
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          onClick={() => navigate('/catalog')}
+        >
+          ← Volver al catálogo
+        </button>
+      </div>
       <section className="detail-hero container py-5">
         {loading ? (
           <p>Cargando información del libro...</p>

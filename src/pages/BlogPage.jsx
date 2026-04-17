@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { getAllPosts } from '../helpers/blogStorage';
-import { getCurrentUser } from '../helpers/demoAuth';
 import './Blog.css';
 
 const BlogPage = () => {
   const [posts, setPosts] = useState(() => getAllPosts());
   const location = useLocation();
-  const currentUser = getCurrentUser();
+  const { user, isLogged } = useAuth();
 
   useEffect(() => {
     const syncPosts = () => setPosts(getAllPosts());
@@ -64,8 +64,8 @@ const BlogPage = () => {
               y clara para Vite y React.
             </p>
             <Link
-              to={currentUser ? '/crear-post' : '/login'}
-              state={currentUser ? undefined : { from: location }}
+              to={isLogged ? '/crear-post' : '/login'}
+              state={isLogged ? undefined : { from: location }}
               className="blog-create-link"
             >
               Crear articulo
@@ -89,8 +89,8 @@ const BlogPage = () => {
                   {post.authorName ? `Por ${post.authorName}` : 'Por Biblioteca Virtual'}
                 </p>
                 <Link
-                  to={currentUser ? `/post/${post.slug}` : '/login'}
-                  state={currentUser ? undefined : { from: { pathname: `/post/${post.slug}` } }}
+                  to={isLogged ? `/post/${post.slug}` : '/login'}
+                  state={isLogged ? { from: '/blog' } : { from: { pathname: `/post/${post.slug}` } }}
                   className="blog-card__link"
                 >
                   Leer articulo

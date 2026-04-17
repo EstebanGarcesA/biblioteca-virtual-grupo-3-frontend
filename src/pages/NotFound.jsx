@@ -11,7 +11,7 @@ const NotFound = () => (
       <Link to="/" className="btn btn-outline-primary me-2">
         Inicio
       </Link>
-      <Link to="/catalogo" className="btn btn-outline-success">
+      <Link to="/catalog" className="btn btn-outline-success">
         Catálogo
       </Link>
     </section>
