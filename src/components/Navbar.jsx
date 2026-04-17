@@ -1,81 +1,51 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React from 'react'
 import './navbar.css';
-import Logo from '../assets/Logo.png';
-import { FaUserCircle } from 'react-icons/fa';
+import Logo from '.././assets/Logo.png';
 
 const Navbar = () => {
-  const { user, logout, isLogged } = useAuth();
+    return (
 
-  return (
-    <nav className="navbar navbar-expand-lg">
-      <div className="container-fluid">
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid">
+                
+                <div class="d-flex align-items-center">
+                    <img src={Logo} alt="Logo" width="70" height="50"
+                        class="d-inline-block align-text-top me-2" />
+                    <span class="navbar-brand mb-0 h1">Biblioteca Virtual</span>
+                </div>
 
-        {/* Logo */}
-        <div className="d-flex align-items-center">
-          <img
-            src={Logo}
-            alt="Logo"
-            width="70"
-            height="50"
-            className="d-inline-block align-text-top me-2"
-          />
-          <span className="navbar-brand mb-0 h1">
-            Biblioteca Virtual
-          </span>
-        </div>
+                 
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+                    aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-        {/* Botón responsive */}
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNavAltMarkup"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
+               
+                <div class="collapse navbar-collapse justify-content-center" id="navbarNavAltMarkup">
+                    <div class="navbar-nav text-center">
+                        <a class="nav-link active" aria-current="page" href="index.html">Home</a>
+                        <a class="nav-link" href="./public/home/catalog.html">Catalogo</a>
+                        <a class="nav-link" href="public/home/Blog.html">Blog</a>
+                    </div>
+                </div>
 
-        {/* Links */}
-        <div className="collapse navbar-collapse justify-content-center">
-          <div className="navbar-nav text-center">
-            <Link className="nav-link" to="/">Home</Link>
-            <Link className="nav-link" to="/catalog">Catálogo</Link>
-            <Link className="nav-link" to="/blog">Blog</Link>
-          </div>
-        </div>
+                
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="inicioSesionDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        Iniciar Sesión
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="inicioSesionDropdown">
+                        <li><a class="dropdown-item" href="./public/home/login.html">Inicio Estudiante</a></li>
+                        <li><a class="dropdown-item" href="./public/admin-interfase/login.html">Inicio Administrador</a>
+                        </li>
+                    </ul>
+                </div>
 
-        {/* Usuario */}
-        {isLogged ? (
-          <div className="d-flex align-items-center gap-2">
+            </div>
+        </nav>
 
-            {/* Nombre usuario */}
-            <span className="me-2">
-              Hola, {user?.name} 👋
-            </span>
+    )
+}
 
-            {/* Icono */}
-            <Link to="/perfil" className="nav-link">
-              <FaUserCircle size={28} />
-            </Link>
-
-            {/* Logout */}
-            <button
-              className="btn btn-outline-danger btn-sm"
-              onClick={logout}
-            >
-              Salir
-            </button>
-          </div>
-        ) : (
-          <Link className="btn btn-secondary" to="/login">
-            Iniciar Sesión
-          </Link>
-        )}
-
-      </div>
-    </nav>
-  );
-};
-
-export default Navbar;
+export default Navbar
