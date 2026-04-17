@@ -1,19 +1,126 @@
-.navbar {
-  background-color: #d7e0dd;
+.blog-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 0.85rem 1.2rem;
+  background: rgba(215, 224, 221, 0.9);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.blog-navbar__container {
+  gap: 1rem;
+}
+
+.blog-navbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.blog-navbar__logo {
+  object-fit: contain;
 }
 
 .navbar-brand {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.8rem;
-  color: #000;
+  letter-spacing: 0.04em;
+  color: #111111;
+}
+
+.blog-navbar__links {
+  gap: 0.8rem;
 }
 
 .navbar-nav .nav-link {
-  color: #000 !important;
-  font-weight: 500;
-  padding: 0 1rem;
+  color: #111111 !important;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.navbar-nav {
-  font-size: 20px;
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+  background: rgba(17, 17, 17, 0.08);
+  transform: translateY(-1px);
+}
+
+.blog-navbar__session {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.blog-navbar__userpicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: #111111;
+  color: #f6f1e8;
+  font-size: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.blog-navbar__userpicker:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
+}
+
+.blog-navbar__userpicker select {
+  border: none;
+  background: transparent;
+  color: #f6f1e8;
+  font-family: Arial, sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.blog-navbar__userpicker option {
+  color: #111111;
+}
+
+.blog-navbar__logout,
+.blog-navbar__login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: #111111;
+  color: #f6f1e8;
+  font-family: Arial, sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+@media (max-width: 991px) {
+  .blog-navbar {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .blog-navbar__container {
+    align-items: flex-start;
+  }
+
+  .blog-navbar__links {
+    padding-top: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 1.4rem;
+  }
+
+  .blog-navbar__brand {
+    max-width: calc(100% - 60px);
+  }
 }
