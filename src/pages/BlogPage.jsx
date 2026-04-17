@@ -7,12 +7,11 @@ import { getCurrentUser } from '../helpers/demoAuth';
 import './Blog.css';
 
 const BlogPage = () => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState(() => getAllPosts());
   const location = useLocation();
   const currentUser = getCurrentUser();
 
   useEffect(() => {
-    setPosts(getAllPosts());
     const syncPosts = () => setPosts(getAllPosts());
     window.addEventListener('storage', syncPosts);
     return () => window.removeEventListener('storage', syncPosts);
