@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { FaBook } from 'react-icons/fa'
 import Footer from '../../components/Footer'
 import { end_points } from '../../config/endPoints'
+import { notifyApiResult, showError, showSuccess, showWarning } from '../../helpers/alerts'
 import './Login.css'
 
 const Login = () => {
@@ -11,30 +12,43 @@ const Login = () => {
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(() => Boolean(localStorage.getItem('rememberedUser')))
   const [users, setUsers] = useState([])
-  const [loadError, setLoadError] = useState('')
   const [loadingUsers, setLoadingUsers] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    fetch(end_points.users)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        return response.json()
-      })
-      .then((data) => {
+    const run = async () => {
+      try {
+        const response = await fetch(end_points.users)
+        let data = {}
+        try {
+          data = await response.json()
+        } catch {
+          data = {}
+        }
+        if (!response.ok) {
+          if (!cancelled) {
+            setUsers([])
+            await notifyApiResult(response, data)
+          }
+          return
+        }
         if (cancelled) return
         const list = Array.isArray(data) ? data : data?.users ?? data?.content ?? []
         setUsers(Array.isArray(list) ? list : [])
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error(error)
-        if (cancelled) return
-        setLoadError('No se pudo cargar la lista de usuarios. Revisa la API o VITE_API_URL.')
-        setUsers([])
-      })
-      .finally(() => {
+        if (!cancelled) {
+          setUsers([])
+          await showError(
+            error instanceof Error ? error.message : 'Comprueba tu conexión e inténtalo de nuevo.',
+            'Sin conexión',
+          )
+        }
+      } finally {
         if (!cancelled) setLoadingUsers(false)
-      })
+      }
+    }
+    void run()
     return () => {
       cancelled = true
     }
@@ -44,21 +58,21 @@ const Login = () => {
     return users.find((item) => user === item.username && password === item.password)
   }
 
-  function signIn(e) {
+  async function signIn(e) {
     e.preventDefault()
     if (user === '' || password === '') {
-      alert('El usuario o la contraseña están vacíos.')
+      await showWarning('Completa el usuario y la contraseña para continuar.', 'Campos vacíos')
       return
     }
     const auth = findUser()
     if (auth) {
       if (remember) localStorage.setItem('rememberedUser', user)
       else localStorage.removeItem('rememberedUser')
-      alert(`Bienvenido, ${auth.username ?? user}`)
+      await showSuccess(`Bienvenido, ${auth.username ?? user}.`, 'Inicio de sesión')
       navigate('/')
       return
     }
-    alert('Usuario o contraseña incorrectos.')
+    await showError('Usuario incorrecto o credenciales inválidas.', 'No se pudo iniciar sesión')
   }
 
   return (
@@ -81,10 +95,7 @@ const Login = () => {
         <div className="container">
           <div className="login-container bg-white rounded shadow-sm mx-auto">
             <h2 className="text-center mb-4">Iniciar sesión</h2>
-            {loadError && <div className="alert alert-warning small">{loadError}</div>}
-            {loadingUsers && !loadError && (
-              <div className="text-muted small mb-2">Cargando usuarios…</div>
-            )}
+            {loadingUsers && <div className="text-muted small mb-2">Cargando usuarios…</div>}
             <form id="loginForm" onSubmit={signIn}>
               <div className="mb-3">
                 <label htmlFor="username" className="form-label">

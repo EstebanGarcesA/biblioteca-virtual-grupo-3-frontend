@@ -1,6 +1,6 @@
 import App from '../App'
 import Login from '../pages/login/Login'
-import Register from '../pages/Register'
+import Register from '../pages/register/Register'
 export let routerApp = [
     {
         path: "/",
