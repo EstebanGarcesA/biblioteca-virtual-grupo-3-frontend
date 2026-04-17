@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '../../assets/Logo.png'
 import Footer from '../../components/Footer'
 import { end_points } from '../../config/endPoints'
+import { idRolPorNombre } from '../../helpers/roles'
 import { notifyApiResult, showError, showWarning } from '../../helpers/alerts'
 import './Register.css'
 
@@ -19,9 +20,13 @@ const emptyForm = () => ({
 
 const Register = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const registroInicial = searchParams.get('registroInicial') === '1'
+
   const [form, setForm] = useState(emptyForm)
-  const [users, setUsers] = useState([])
-  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [usuarios, setUsuarios] = useState([])
+  const [roles, setRoles] = useState([])
+  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
   const setField = (field) => (e) => {
@@ -33,34 +38,54 @@ const Register = () => {
     let cancelled = false
     const run = async () => {
       try {
-        const response = await fetch(end_points.users)
-        let data = {}
+        const [resUsuarios, resRoles] = await Promise.all([
+          fetch(end_points.usuarios),
+          fetch(end_points.roles),
+        ])
+        let dataUsuarios = {}
+        let dataRoles = {}
         try {
-          data = await response.json()
+          dataUsuarios = await resUsuarios.json()
         } catch {
-          data = {}
+          dataUsuarios = {}
         }
-        if (!response.ok) {
+        try {
+          dataRoles = await resRoles.json()
+        } catch {
+          dataRoles = {}
+        }
+        if (!resUsuarios.ok) {
           if (!cancelled) {
-            setUsers([])
-            await notifyApiResult(response, data)
+            setUsuarios([])
+            await notifyApiResult(resUsuarios, dataUsuarios)
           }
-          return
+        } else if (!cancelled) {
+          const listU = Array.isArray(dataUsuarios)
+            ? dataUsuarios
+            : dataUsuarios?.usuarios ?? dataUsuarios?.content ?? []
+          setUsuarios(Array.isArray(listU) ? listU : [])
         }
-        if (cancelled) return
-        const list = Array.isArray(data) ? data : data?.users ?? data?.content ?? []
-        setUsers(Array.isArray(list) ? list : [])
+        if (!resRoles.ok) {
+          if (!cancelled) {
+            setRoles([])
+            await notifyApiResult(resRoles, dataRoles)
+          }
+        } else if (!cancelled) {
+          const listR = Array.isArray(dataRoles) ? dataRoles : dataRoles?.roles ?? dataRoles?.content ?? []
+          setRoles(Array.isArray(listR) ? listR : [])
+        }
       } catch (error) {
         console.error(error)
         if (!cancelled) {
-          setUsers([])
+          setUsuarios([])
+          setRoles([])
           await showError(
             error instanceof Error ? error.message : 'Comprueba tu conexión e inténtalo de nuevo.',
             'Sin conexión',
           )
         }
       } finally {
-        if (!cancelled) setLoadingUsers(false)
+        if (!cancelled) setLoading(false)
       }
     }
     void run()
@@ -89,22 +114,30 @@ const Register = () => {
       await showWarning('Completa todos los campos obligatorios antes de registrar.', 'Formulario incompleto')
       return
     }
-    if (loadingUsers) {
+    if (loading) {
       await showWarning('Espera a que termine la carga de datos e inténtalo de nuevo.', 'Cargando')
       return
     }
 
     const emailTrim = form.email.trim()
-    const exists = users.some((u) => u.username === emailTrim)
-    if (exists) {
-      await showError('Ya existe un usuario con ese correo o nombre de usuario.', 'No se pudo registrar')
+    const existeCorreo = usuarios.some((u) => (u.email ?? '').trim() === emailTrim)
+    if (existeCorreo) {
+      await showError('Ya existe un usuario con ese correo electrónico.', 'No se pudo registrar')
       return
     }
 
-    const payload = {
-      username: emailTrim,
-      password: form.password,
-      email: emailTrim,
+    const esPrimerUsuario = usuarios.length === 0
+    const rolNombre = esPrimerUsuario ? 'ADMIN' : 'USUARIO'
+    const rolId = idRolPorNombre(roles, rolNombre)
+    if (rolId == null) {
+      await showError(
+        `No se encontró el rol «${rolNombre}» en la base de datos. Crea los roles ADMIN y USUARIO y vuelve a intentarlo.`,
+        'Roles no disponibles',
+      )
+      return
+    }
+
+    const perfilBody = {
       tipoDocumento: form.documentType,
       numeroDocumento: form.documentNumber.trim(),
       nombre: form.firstName.trim(),
@@ -115,19 +148,47 @@ const Register = () => {
 
     setSubmitting(true)
     try {
-      const response = await fetch(end_points.users, {
+      const resPerfil = await fetch(end_points.perfiles, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(perfilBody),
       })
-      let data = {}
+      let perfilData = {}
       try {
-        data = await response.json()
+        perfilData = await resPerfil.json()
       } catch {
-        data = {}
+        perfilData = {}
       }
-      await notifyApiResult(response, data)
-      if (response.ok) {
+      if (!resPerfil.ok) {
+        await notifyApiResult(resPerfil, perfilData)
+        return
+      }
+      const perfilId = perfilData?.id
+      if (typeof perfilId !== 'number') {
+        await showError('La API no devolvió el identificador del perfil creado.', 'Error inesperado')
+        return
+      }
+
+      const usuarioBody = {
+        email: emailTrim,
+        password: form.password,
+        rolId,
+        perfilId,
+      }
+
+      const resUsuario = await fetch(end_points.usuarios, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(usuarioBody),
+      })
+      let usuarioData = {}
+      try {
+        usuarioData = await resUsuario.json()
+      } catch {
+        usuarioData = {}
+      }
+      await notifyApiResult(resUsuario, usuarioData)
+      if (resUsuario.ok) {
         setForm(emptyForm())
         navigate('/login')
       }
@@ -141,6 +202,9 @@ const Register = () => {
       setSubmitting(false)
     }
   }
+
+  const titulo =
+    usuarios.length === 0 || registroInicial ? 'Registro del administrador' : 'Registro de usuario'
 
   return (
     <div className="d-flex flex-column min-vh-100">
@@ -170,8 +234,13 @@ const Register = () => {
       <div id="bannerRegistro" className="flex-grow-1">
         <div className="container mt-4 mb-4">
           <div className="register-container card shadow-sm p-4 rounded mx-auto bg-white">
-            <h2 className="text-center mb-4">Registro de usuario</h2>
-            {loadingUsers && <div className="text-muted small mb-3">Cargando datos…</div>}
+            <h2 className="text-center mb-4">{titulo}</h2>
+            {usuarios.length === 0 && (
+              <p className="text-muted small text-center mb-3">
+                Eres el primer usuario del sistema: se te asignará el rol ADMIN.
+              </p>
+            )}
+            {loading && <div className="text-muted small mb-3">Cargando datos…</div>}
             <form id="registroForm" onSubmit={handleSubmit}>
               <div className="row mb-3">
                 <div className="col-md-6">
@@ -295,7 +364,7 @@ const Register = () => {
               </div>
 
               <div className="d-grid gap-2">
-                <button type="submit" className="btn btn-info" disabled={loadingUsers || submitting}>
+                <button type="submit" className="btn btn-info" disabled={loading || submitting}>
                   {submitting ? 'Registrando…' : 'Registrar'}
                 </button>
               </div>

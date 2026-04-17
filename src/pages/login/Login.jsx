@@ -1,24 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../../assets/Logo.png'
 import Footer from '../../components/Footer'
 import { end_points } from '../../config/endPoints'
-import { notifyApiResult, showError, showSuccess, showWarning } from '../../helpers/alerts'
+import { esRolAdmin } from '../../helpers/roles'
+import { guardarSesion } from '../../helpers/session'
+import { notifyApiResult, showError, showSuccess, showWarning, showInfo } from '../../helpers/alerts'
 import './Login.css'
 
 const Login = () => {
   const navigate = useNavigate()
-  const [user, setUser] = useState(() => localStorage.getItem('rememberedUser') ?? '')
+  const [email, setEmail] = useState(() => localStorage.getItem('rememberedUser') ?? '')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(() => Boolean(localStorage.getItem('rememberedUser')))
-  const [users, setUsers] = useState([])
-  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [usuarios, setUsuarios] = useState([])
+  const [loadingUsuarios, setLoadingUsuarios] = useState(true)
+  const avisoSinUsuarios = useRef(false)
 
   useEffect(() => {
     let cancelled = false
     const run = async () => {
       try {
-        const response = await fetch(end_points.users)
+        const response = await fetch(end_points.usuarios)
         let data = {}
         try {
           data = await response.json()
@@ -27,52 +30,77 @@ const Login = () => {
         }
         if (!response.ok) {
           if (!cancelled) {
-            setUsers([])
+            setUsuarios([])
             await notifyApiResult(response, data)
           }
           return
         }
         if (cancelled) return
-        const list = Array.isArray(data) ? data : data?.users ?? data?.content ?? []
-        setUsers(Array.isArray(list) ? list : [])
+        const list = Array.isArray(data) ? data : data?.usuarios ?? data?.content ?? []
+        const arr = Array.isArray(list) ? list : []
+        setUsuarios(arr)
+        if (arr.length === 0 && !avisoSinUsuarios.current) {
+          avisoSinUsuarios.current = true
+          await showInfo(
+            'Aún no hay usuarios registrados. Debes crear primero la cuenta del administrador.',
+            'Configuración inicial',
+          )
+          navigate('/register?registroInicial=1', { replace: true })
+        }
       } catch (error) {
         console.error(error)
         if (!cancelled) {
-          setUsers([])
+          setUsuarios([])
           await showError(
             error instanceof Error ? error.message : 'Comprueba tu conexión e inténtalo de nuevo.',
             'Sin conexión',
           )
         }
       } finally {
-        if (!cancelled) setLoadingUsers(false)
+        if (!cancelled) setLoadingUsuarios(false)
       }
     }
     void run()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [navigate])
 
-  function findUser() {
-    return users.find((item) => user === item.username && password === item.password)
+  function buscarUsuario() {
+    const emailTrim = email.trim()
+    return usuarios.find((item) => emailTrim === (item.email ?? '').trim() && password === item.password)
   }
 
   async function signIn(e) {
     e.preventDefault()
-    if (user === '' || password === '') {
-      await showWarning('Completa el usuario y la contraseña para continuar.', 'Campos vacíos')
+    if (email.trim() === '' || password === '') {
+      await showWarning('Completa el correo y la contraseña para continuar.', 'Campos vacíos')
       return
     }
-    const auth = findUser()
+    if (usuarios.length === 0) {
+      await showWarning('No hay usuarios registrados. Registra primero al administrador.', 'Acción requerida')
+      navigate('/register?registroInicial=1')
+      return
+    }
+    const auth = buscarUsuario()
     if (auth) {
-      if (remember) localStorage.setItem('rememberedUser', user)
+      if (remember) localStorage.setItem('rememberedUser', email.trim())
       else localStorage.removeItem('rememberedUser')
-      await showSuccess(`Bienvenido, ${auth.username ?? user}.`, 'Inicio de sesión')
-      navigate('/')
+      const rolDesc = (auth.rol?.descripcion ?? '').toString()
+      guardarSesion({
+        id: auth.id,
+        email: (auth.email ?? '').trim(),
+        rolDescripcion: rolDesc,
+      })
+      await showSuccess(`Bienvenido, ${auth.email ?? email}.`, 'Inicio de sesión')
+      if (esRolAdmin(auth.rol)) {
+        navigate('/admin/dashboard')
+      } else {
+        navigate('/usuario/perfil')
+      }
       return
     }
-    await showError('Usuario incorrecto o credenciales inválidas.', 'No se pudo iniciar sesión')
+    await showError('Correo o contraseña incorrectos.', 'No se pudo iniciar sesión')
   }
 
   return (
@@ -101,20 +129,20 @@ const Login = () => {
         <div className="container">
           <div className="login-container bg-white rounded shadow-sm mx-auto">
             <h2 className="text-center mb-4">Iniciar sesión</h2>
-            {loadingUsers && <div className="text-muted small mb-2">Cargando usuarios…</div>}
+            {loadingUsuarios && <div className="text-muted small mb-2">Cargando…</div>}
             <form id="loginForm" onSubmit={signIn}>
               <div className="mb-3">
                 <label htmlFor="username" className="form-label">
-                  Usuario
+                  Correo electrónico
                 </label>
                 <input
                   id="username"
-                  type="text"
+                  type="email"
                   className="form-control"
                   autoComplete="username"
-                  placeholder="Ingresa tu usuario"
-                  value={user}
-                  onChange={(e) => setUser(e.target.value)}
+                  placeholder="Ingresa tu correo"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="mb-3">
@@ -144,7 +172,7 @@ const Login = () => {
                 </label>
               </div>
               <div className="d-grid mb-3">
-                <button type="submit" className="btn btn-info" disabled={loadingUsers}>
+                <button type="submit" className="btn btn-info" disabled={loadingUsuarios}>
                   Iniciar sesión
                 </button>
               </div>
