@@ -4,8 +4,13 @@ import Logo from '../../assets/Logo.png'
 import Footer from '../../components/Footer'
 import { end_points } from '../../config/endPoints'
 import { idRolPorNombre } from '../../helpers/roles'
-import { notifyApiResult, showError, showWarning } from '../../helpers/alerts'
+import { notifyApiResult, showError, showWarning, showInfo } from '../../helpers/alerts'
 import './Register.css'
+
+const DEFAULT_ROLE_IDS = {
+  ADMIN: 1,
+  USUARIO: 2,
+}
 
 const emptyForm = () => ({
   documentType: '',
@@ -32,6 +37,62 @@ const Register = () => {
   const setField = (field) => (e) => {
     const value = e.target.value
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function crearRolSiFalta(nombre) {
+    try {
+      const res = await fetch(end_points.roles, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descripcion: nombre }),
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      return typeof data?.id === 'number' ? data.id : null
+    } catch {
+      return null
+    }
+  }
+
+  async function refrescarRoles() {
+    try {
+      const res = await fetch(end_points.roles)
+      if (!res.ok) return Array.isArray(roles) ? roles : []
+      const data = await res.json()
+      const listR = Array.isArray(data) ? data : data?.roles ?? data?.content ?? []
+      const nuevosRoles = Array.isArray(listR) ? listR : []
+      setRoles(nuevosRoles)
+      return nuevosRoles
+    } catch {
+      return Array.isArray(roles) ? roles : []
+    }
+  }
+
+  async function crearRolesBasicosSiFaltan() {
+    const rolesNecesarios = ['ADMIN', 'USUARIO']
+    const rolesActuales = Array.isArray(roles) ? roles : []
+    const faltantes = rolesNecesarios.filter((nombre) => idRolPorNombre(rolesActuales, nombre) == null)
+    if (faltantes.length === 0) return rolesActuales
+
+    const creados = []
+    for (const nombre of faltantes) {
+      const id = await crearRolSiFalta(nombre)
+      if (id != null) {
+        creados.push({ id, descripcion: nombre })
+      }
+    }
+
+    if (creados.length > 0) {
+      const nuevosRoles = [...rolesActuales, ...creados]
+      setRoles(nuevosRoles)
+      await showInfo(
+        'Roles básicos creados automáticamente: ADMIN y/o USUARIO.',
+        'Roles disponibles',
+      )
+      return nuevosRoles
+    }
+
+    return rolesActuales
   }
 
   useEffect(() => {
@@ -128,10 +189,25 @@ const Register = () => {
 
     const esPrimerUsuario = usuarios.length === 0
     const rolNombre = esPrimerUsuario ? 'ADMIN' : 'USUARIO'
-    const rolId = idRolPorNombre(roles, rolNombre)
+    let rolId = idRolPorNombre(roles, rolNombre)
+    if (rolId == null) {
+      const rolesActualizados = await crearRolesBasicosSiFaltan()
+      rolId = idRolPorNombre(rolesActualizados, rolNombre)
+    }
+    if (rolId == null) {
+      const rolesRefrescados = await refrescarRoles()
+      rolId = idRolPorNombre(rolesRefrescados, rolNombre)
+    }
+    if (rolId == null && DEFAULT_ROLE_IDS[rolNombre] != null) {
+      rolId = DEFAULT_ROLE_IDS[rolNombre]
+      await showWarning(
+        `No se encontró el rol «${rolNombre}» en la base de datos, pero se usará el identificador predeterminado ${rolId}. Si esta operación falla, verifica los datos de roles en el backend.`,
+        'Rol predeterminado usado',
+      )
+    }
     if (rolId == null) {
       await showError(
-        `No se encontró el rol «${rolNombre}» en la base de datos. Crea los roles ADMIN y USUARIO y vuelve a intentarlo.`,
+        `No se encontró el rol «${rolNombre}» en la base de datos y no pudo crearse automáticamente. Contacta al administrador del sistema.`,
         'Roles no disponibles',
       )
       return

@@ -1,0 +1,143 @@
+:root {
+  --perfil-bg: #1bceee;
+  --perfil-banner: #e4532e;
+  --perfil-text: #000;
+  --perfil-muted: rgba(0, 0, 0, 0.7);
+}
+
+.perfil-page {
+  font-family: 'Bebas Neue', sans-serif;
+}
+
+#bannerPerfil {
+  height: 220px;
+  width: 100%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 67%;
+  background-color: var(--perfil-banner);
+  display: flex;
+  align-items: center;
+}
+
+#bannerPerfil h1 {
+  font-size: 3rem;
+  color: #fff;
+}
+
+#bannerPerfil p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+}
+
+.perfil article {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.perfil .imagen img {
+  width: 300px;
+  height: auto;
+  border-radius: 200px;
+  border: #000 solid 5px;
+  object-fit: cover;
+}
+
+.perfil h2 {
+  font-size: 50px;
+  color: var(--perfil-text);
+  margin-bottom: 1rem;
+}
+
+.perfil .informacion {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.perfil .informacion ul {
+  list-style: none;
+  padding: 0;
+  min-width: 220px;
+}
+
+.perfil .informacion ul li {
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+  color: var(--perfil-muted);
+}
+
+#informacionUsuario {
+  width: 100%;
+  background-color: var(--perfil-bg);
+  display: flex;
+  align-items: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+#informacionUsuario h3 {
+  font-size: 1.4rem;
+  color: #fff;
+}
+
+#informacionUsuario p {
+  color: #fff;
+}
+
+.tablePrestamo h3 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.tablePrestamo table {
+  width: 100%;
+  font-size: 1rem;
+}
+
+.tablePrestamo th,
+.tablePrestamo td {
+  background-color: transparent !important;
+  border-color: #dee2e6;
+  color: #000;
+}
+
+.tablePrestamo td {
+  vertical-align: middle;
+}
+
+@media (max-width: 576px) {
+  .perfil .imagen img {
+    width: 120px;
+  }
+
+  .perfil h2 {
+    font-size: 1.5rem;
+  }
+
+  .perfil .informacion ul,
+  .tablePrestamo table {
+    font-size: 0.85rem;
+  }
+}
+
+@media (min-width: 577px) and (max-width: 991px) {
+  .perfil .imagen img {
+    width: 180px;
+  }
+
+  .perfil .informacion {
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .perfil article {
+    flex-direction: row;
+  }
+}
