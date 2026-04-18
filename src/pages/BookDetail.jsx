@@ -84,25 +84,54 @@ const BookDetail = () => {
     setFormError('');
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const reservaDate = new Date(form.fechaHoy);
-    const devolucionDate = new Date(form.fechaDevolucion);
-    const maxAllowed = new Date(reservaDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const handleSubmit = async (event) => {
+  console.log("ENTRÓ AL SUBMIT");
+  event.preventDefault();
 
-    if (devolucionDate < reservaDate) {
-      setFormError('La fecha de devolución no puede ser anterior a la fecha de reserva.');
-      return;
-    }
+  const reservaDate = new Date(form.fechaHoy);
+  const devolucionDate = new Date(form.fechaDevolucion);
+  const maxAllowed = new Date(reservaDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    if (devolucionDate > maxAllowed) {
-      setFormError('La devolución debe hacerse dentro de los 7 días posteriores a la reserva.');
-      return;
+  if (devolucionDate < reservaDate) {
+    setFormError('La fecha de devolución no puede ser anterior a la fecha de reserva.');
+    return;
+  }
+
+  if (devolucionDate > maxAllowed) {
+    setFormError('La devolución debe hacerse dentro de los 7 días posteriores a la reserva.');
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8080/prestamos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        googleId: book.id,
+        nombreLibro: volume.title,
+        autores: (volume.authors || []).join(", "),
+        thumbnail: volume.imageLinks?.thumbnail
+          ? volume.imageLinks.thumbnail.replace("http://", "https://")
+          : "",
+        descripcion: volume.description,
+        perfilId: 1
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al guardar préstamo");
     }
 
     setReservationSent(true);
     setShowReserveForm(false);
-  };
+
+  } catch (error) {
+    console.error(error);
+    setFormError("No se pudo crear el préstamo");
+  }
+};
 
   return (
     <main className="detail-page">
