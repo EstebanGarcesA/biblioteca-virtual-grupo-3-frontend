@@ -15,7 +15,7 @@ const footerColumns = [
     'Notificaciones judiciales',
   ],
   [
-    'Te acompanamos',
+    'Te acompaÃ±amos',
     'Atencion y servicio a la ciudadania',
     'Presentar una peticion u observacion sobre los servicios',
     'Carta derechos y deberes afiliados',
@@ -58,7 +58,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="footer-bottom">Derechos reservados © 2026</div>
+      <div className="footer-bottom">Derechos reservados ï¿½ 2026</div>
     </footer>
   );
 };

@@ -33,8 +33,8 @@ const BlogPage = () => {
 
       <section className="blog-highlights">
         <article className="blog-featured">
-          <span className="blog-chip">Edicion destacada</span>
-          <h3>La biblioteca tambien cuenta historias fuera de los libros</h3>
+          <span className="blog-chip">Edición destacada</span>
+          <h3>La biblioteca también cuenta historias fuera de los libros</h3>
           <p>
             Este espacio reune ideas, testimonios y selecciones pensadas para
             que cada visita a la biblioteca se sienta mas cercana, util e
@@ -44,8 +44,8 @@ const BlogPage = () => {
 
         <article className="blog-quote">
           <p>
-            "Cada lectura deja una huella distinta: unas ensenan, otras
-            acompanan y algunas cambian el rumbo."
+            "Cada lectura deja una huella distinta: unas enseñan, otras
+            acompañan y algunas cambian el rumbo."
           </p>
         </article>
       </section>
