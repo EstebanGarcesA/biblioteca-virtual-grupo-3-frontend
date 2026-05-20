@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import Logo from '../../assets/Logo.png'
 import Footer from '../../components/Footer'
 import { endPoints } from '../../config/endPoints'
+import { buildAuthHeaders, guardarCredenciales } from '../../helpers/auth'
 import { esRolAdmin } from '../../helpers/roles'
-import { guardarSesion } from '../../helpers/session'
 import { notifyApiResult, showError, showSuccess, showWarning, showInfo } from '../../helpers/alerts'
 import './Login.css'
 
@@ -29,12 +30,23 @@ const getFullName = (source) => {
 
 const Login = () => {
   const navigate = useNavigate()
+  const { isLogged, user, login } = useAuth()
   const [email, setEmail] = useState(() => localStorage.getItem('rememberedUser') ?? '')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(() => Boolean(localStorage.getItem('rememberedUser')))
   const [usuarios, setUsuarios] = useState([])
   const [loadingUsuarios, setLoadingUsuarios] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const avisoSinUsuarios = useRef(false)
+  const redirectDone = useRef(false)
+
+  useEffect(() => {
+    if (isLogged && !redirectDone.current) {
+      redirectDone.current = true
+      const destination = user?.rolDescripcion?.toUpperCase() === 'ADMIN' ? '/admin/perfil' : '/perfil'
+      navigate(destination, { replace: true })
+    }
+  }, [isLogged, user, navigate])
 
   useEffect(() => {
     let cancelled = false
@@ -85,26 +97,9 @@ const Login = () => {
     }
   }, [navigate])
 
-  function buscarUsuario() {
+  function buscarUsuarioPorEmail() {
     const emailTrim = email.trim()
-    return usuarios.find((item) => emailTrim === (item.email ?? '').trim() && password === item.password)
-  }
-
-  async function resolveUserName(user) {
-    const directName = getFullName(user)
-    if (directName) return directName
-
-    const perfilId = user?.perfilId ?? user?.perfil?.id
-    if (!perfilId) return ''
-
-    try {
-      const response = await fetch(`${endPoints.perfiles}/${perfilId}`)
-      if (!response.ok) return ''
-      const perfil = await response.json()
-      return getFullName(perfil)
-    } catch {
-      return ''
-    }
+    return usuarios.find((item) => emailTrim === (item.email ?? '').trim())
   }
 
   async function signIn(e) {
@@ -119,30 +114,75 @@ const Login = () => {
       return
     }
 
-    const authUser = buscarUsuario()
-    if (authUser) {
-      const rolDesc = (authUser.rol?.descripcion ?? '').toString()
-      const fullName = await resolveUserName(authUser)
-      if (remember) localStorage.setItem('rememberedUser', email.trim())
-      else localStorage.removeItem('rememberedUser')
-
-      guardarSesion({
-        id: authUser.id,
-        email: (authUser.email ?? '').trim(),
-        name: fullName,
-        rolDescripcion: rolDesc,
-      })
-
-      await showSuccess(`Bienvenido, ${authUser.perfil?.nombre ?? email}.`, 'Inicio de sesión')
-      if (esRolAdmin(authUser.rol)) {
-        navigate('/admin/dashboard')
-      } else {
-        navigate('/perfil')
-      }
+    const emailTrim = email.trim()
+    const usuario = buscarUsuarioPorEmail()
+    if (!usuario) {
+      await showError('Correo o contraseña incorrectos.', 'No se pudo iniciar sesión')
       return
     }
 
-    await showError('Correo o contraseña incorrectos.', 'No se pudo iniciar sesión')
+    const perfilId = usuario.perfilId ?? usuario.perfil?.id
+    if (!perfilId) {
+      await showError('El usuario no tiene un perfil asociado.', 'No se pudo iniciar sesión')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const credenciales = { email: emailTrim, password }
+      const response = await fetch(endPoints.perfilPorId(perfilId), {
+        headers: buildAuthHeaders(credenciales),
+      })
+
+      if (response.status === 401) {
+        await showError('Correo o contraseña incorrectos.', 'No se pudo iniciar sesión')
+        return
+      }
+
+      if (!response.ok) {
+        let data = {}
+        try {
+          data = await response.json()
+        } catch {
+          data = {}
+        }
+        await notifyApiResult(response, data)
+        return
+      }
+
+      const perfil = await response.json()
+      const rolDesc = (usuario.rol?.descripcion ?? '').toString()
+      const fullName = getFullName(perfil) || getFullName(usuario)
+
+      if (remember) localStorage.setItem('rememberedUser', emailTrim)
+      else localStorage.removeItem('rememberedUser')
+
+      guardarCredenciales(emailTrim, password)
+
+      login({
+        id: usuario.id,
+        email: emailTrim,
+        name: fullName,
+        rolDescripcion: rolDesc,
+        perfilId,
+      })
+
+      await showSuccess(`Bienvenido, ${perfil?.nombre ?? emailTrim}.`, 'Inicio de sesión')
+
+      if (esRolAdmin(usuario.rol)) {
+        navigate('/admin/perfil')
+      } else {
+        navigate('/perfil')
+      }
+    } catch (error) {
+      console.error(error)
+      await showError(
+        error instanceof Error ? error.message : 'Comprueba tu conexión e inténtalo de nuevo.',
+        'Sin conexión',
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleGoBack = () => {
@@ -222,8 +262,12 @@ const Login = () => {
                 </label>
               </div>
               <div className="d-grid mb-3">
-                <button type="submit" className="btn btn-info" disabled={loadingUsuarios}>
-                  Iniciar sesión
+                <button
+                  type="submit"
+                  className="btn btn-info"
+                  disabled={loadingUsuarios || submitting}
+                >
+                  {submitting ? 'Validando…' : 'Iniciar sesión'}
                 </button>
               </div>
               <div className="d-grid mb-3">

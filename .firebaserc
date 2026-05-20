@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "biblioteca-virtual-g3",
+    "deploy": "biblioteca-virtual-g3"
+  },
+  "targets": {},
+  "etags": {}
+}

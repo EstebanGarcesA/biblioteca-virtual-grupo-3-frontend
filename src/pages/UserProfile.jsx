@@ -2,11 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
 import { endPoints } from '../config/endPoints'
-import { obtenerSesion, cerrarSesion } from '../helpers/session'
+import { obtenerSesion } from '../helpers/session'
+import { useAuth } from '../contexts/AuthContext'
+import { request } from '../services/api/httpClient'
+import { esRolAdmin } from '../helpers/roles'
 import './UserProfile.css'
+
 
 const UserProfile = () => {
   const navigate = useNavigate()
+  const { logout } = useAuth()
+
   const [profile, setProfile] = useState(null)
   const [loans, setLoans] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,43 +27,21 @@ const UserProfile = () => {
     let cancelled = false
     const loadProfile = async () => {
       try {
-        const resUsuario = await fetch(`${endPoints.usuarios}/${encodeURIComponent(session.id)}`)
-        if (!resUsuario.ok) {
-          throw new Error('No se pudo cargar la información del usuario.')
-        }
-
-        const currentUser = await resUsuario.json()
-        if (!currentUser) {
-          setProfile({
-            email: session.email,
-            rolDescripcion: session.rolDescripcion,
-          })
-          return
-        }
-
-        const perfilId = currentUser.perfilId ?? currentUser.perfil?.id
+        const perfilId = session.perfilId
         if (!perfilId) {
-          console.warn('No hay perfilId disponible')
-          setProfile({
-            email: session.email,
-            rolDescripcion: session.rolDescripcion,
-            ...currentUser,
-          })
-          return
+          throw new Error('No se encontró el perfil asociado a la sesión.')
         }
 
-        const resPerfil = await fetch(`${endPoints.perfiles}/${perfilId}`)
-        if (!resPerfil.ok) {
-          console.warn('Error al obtener perfil:', resPerfil.status)
-          setProfile({
-            email: session.email,
-            rolDescripcion: session.rolDescripcion,
-            ...currentUser,
-          })
-          return
+        let currentUser = { id: session.id, email: session.email, perfilId }
+        if (esRolAdmin({ descripcion: session.rolDescripcion })) {
+          try {
+            currentUser = await request(endPoints.usuarioPorId(session.id))
+          } catch (error) {
+            console.warn('No se pudo cargar el usuario admin:', error)
+          }
         }
 
-        const perfilData = await resPerfil.json()
+        const perfilData = await request(endPoints.perfilPorId(perfilId))
         if (!cancelled) {
           setProfile({
             email: session.email,
@@ -66,40 +50,32 @@ const UserProfile = () => {
             ...currentUser,
           })
 
-          // Cargar préstamos específicos del perfil
           try {
             const prestamosUrls = [
               endPoints.prestamosPorPerfil(perfilId),
               endPoints.librosPrestadosPorPerfil(perfilId),
             ]
 
-            let resPrestamos = null
+            let prestamosData = []
             for (const urlPrestamos of prestamosUrls) {
-              resPrestamos = await fetch(urlPrestamos)
-              if (resPrestamos.ok) break
+              try {
+                prestamosData = await request(urlPrestamos)
+                break
+              } catch {
+                // probar siguiente endpoint
+              }
             }
 
-            if (resPrestamos.ok) {
-              const contentType = resPrestamos.headers.get('content-type') ?? ''
-              const prestamosData = contentType.includes('application/json')
-                ? await resPrestamos.json()
-                : null
-              
-              const prestamosArray = Array.isArray(prestamosData)
-                ? prestamosData
-                : prestamosData?.content ?? prestamosData?.prestamos ?? prestamosData?.data ?? []
-              
-              if (!cancelled) {
-                setLoans(prestamosArray)
-              }
-            } else {
-              console.warn('Error al obtener préstamos, status:', resPrestamos.status)
-              const errorText = await resPrestamos.text()
-              console.warn('Error detail:', errorText)
+            const prestamosArray = Array.isArray(prestamosData)
+              ? prestamosData
+              : prestamosData?.content ?? prestamosData?.prestamos ?? prestamosData?.data ?? []
+
+            if (!cancelled) {
+              setLoans(prestamosArray)
             }
           } catch (error) {
             console.warn('Excepción al cargar préstamos:', error)
-            setLoans([])
+            if (!cancelled) setLoans([])
           }
         }
       } catch (error) {
@@ -126,9 +102,9 @@ const UserProfile = () => {
   if (!session) return null
 
   const handleLogout = () => {
-    cerrarSesion()
-    navigate('/login')
-  }
+  logout()
+  navigate('/login', { replace: true })
+}
 
   const nombreCompleto = profile?.nombre
     ? `${profile.nombre} ${profile.apellido ?? ''}`.trim()
