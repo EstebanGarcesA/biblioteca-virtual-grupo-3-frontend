@@ -66,15 +66,7 @@ const AdminLayout = () => {
 
             <div className="page-content">
                 <header className="navbar">
-                    <button
-                        type="button"
-                        className="menu-toggle"
-                        aria-label={sidebarOpen ? 'Cerrar menú lateral' : 'Abrir menú lateral'}
-                        aria-expanded={sidebarOpen}
-                        onClick={() => setSidebarOpen((o) => !o)}
-                    >
-                        <i className="fas fa-bars"></i>
-                    </button>
+
                     <nav className="navbar-nav">
                         <span className="nav-link"><i className="fas fa-bell icon-lg text-primary"></i></span>
                         <span className="nav-link">Panel admin</span>
