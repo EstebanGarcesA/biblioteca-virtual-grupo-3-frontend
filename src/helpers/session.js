@@ -2,8 +2,8 @@ const SESSION_KEY = 'biblioteca_sesion_usuario'
 export const SESSION_EVENT = 'biblioteca-session-changed'
 
 /**
- * Sesión local sin tokens: datos mínimos del usuario tras login.
- * @typedef {{ id: number, email: string, name?: string, rolDescripcion: string }} SesionUsuario
+ * Sesión local: datos del usuario tras login (credenciales aparte en sessionStorage).
+ * @typedef {{ id: number, email: string, name?: string, rolDescripcion: string, perfilId?: number }} SesionUsuario
  */
 
 /** @returns {SesionUsuario | null} */

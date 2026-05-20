@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { endPoints } from '../config/endPoints';
+import { request } from '../services/api/httpClient';
 import './BookDetail.css';
 
 
@@ -101,21 +102,9 @@ const BookDetail = () => {
   }
 
   try {
-    const userResponse = await fetch(
-      `${endPoints.usuarios}/${encodeURIComponent(user.id)}`
-    );
-
-    if (!userResponse.ok) {
-      const errorText = await userResponse.text();
-      console.error('Error obteniendo usuario:', errorText);
-      throw new Error('No se pudo obtener el perfil del usuario');
-    }
-
-    const userData = await userResponse.json();
-    const perfilId = userData.perfilId ?? userData.perfil?.id;
+    const perfilId = user.perfilId ?? user.perfil?.id;
 
     if (!perfilId) {
-      console.error('Usuario sin perfil:', userData);
       throw new Error('No se encontró el perfil asociado al usuario');
     }
 
@@ -133,19 +122,10 @@ const BookDetail = () => {
       perfilId,
       fechaDevolucion: form.fechaDevolucion
     };
-    const response = await fetch(endPoints.prestamos, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+    await request(endPoints.prestamos, {
+      method: 'POST',
       body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error backend:', errorText);
-      throw new Error("Error al guardar préstamo");
-    }
 
     setReservationSent(true);
     setShowReserveForm(false);

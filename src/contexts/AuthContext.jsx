@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { limpiarCredenciales, obtenerCredenciales } from '../helpers/auth';
 import { cerrarSesion, obtenerSesion, guardarSesion, SESSION_EVENT } from '../helpers/session';
 
 const AuthContext = createContext(null);
@@ -25,10 +26,18 @@ const normalizeUser = (rawUser) => {
         : fallbackName,
     rolDescripcion:
       typeof rawUser.rolDescripcion === 'string' ? rawUser.rolDescripcion : '',
+    perfilId:
+      typeof rawUser.perfilId === 'number'
+        ? rawUser.perfilId
+        : rawUser.perfil?.id ?? undefined,
   };
 };
 
 const readStoredUser = () => {
+  if (!obtenerCredenciales()) {
+    return null;
+  }
+
   const sessionUser = normalizeUser(obtenerSesion());
   if (sessionUser) {
     return sessionUser;
@@ -80,11 +89,13 @@ export const AuthProvider = ({ children }) => {
       email: nextUser.email,
       name: nextUser.name,
       rolDescripcion: nextUser.rolDescripcion,
+      perfilId: nextUser.perfilId,
     });
     setUser(nextUser);
   };
 
   const logout = () => {
+    limpiarCredenciales();
     cerrarSesion();
     localStorage.removeItem(AUTH_KEY);
     setUser(null);
