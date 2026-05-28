@@ -18,6 +18,8 @@
 
 .search-input {
     position: relative;
+    flex: 1 1 240px;
+    max-width: 360px;
 }
 
 .search-input input {
@@ -78,6 +80,9 @@
 
 .data-table .actions {
     white-space: nowrap;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .badge {

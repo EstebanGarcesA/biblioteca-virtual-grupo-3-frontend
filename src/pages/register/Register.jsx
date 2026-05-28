@@ -41,7 +41,7 @@ const Register = () => {
 
   async function crearRolSiFalta(nombre) {
     try {
-      const res = await fetch(points.roles, {
+      const res = await fetch(endPoints.roles, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ descripcion: nombre }),

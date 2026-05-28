@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import '../styles/admin/sidebar.css';   
 import '../styles/admin/variables.css';
 import '../styles/admin/layout.css';
+import '../styles/admin/responsive.css';
 
 
 const AdminLayout = () => {
@@ -66,6 +67,15 @@ const AdminLayout = () => {
 
             <div className="page-content">
                 <header className="navbar">
+                    <button
+                        type="button"
+                        className="admin-menu-toggle"
+                        aria-label="Abrir menÃº"
+                        aria-expanded={sidebarOpen}
+                        onClick={() => setSidebarOpen(true)}
+                    >
+                        <i className="fas fa-bars"></i>
+                    </button>
 
                     <nav className="navbar-nav">
                         <span className="nav-link"><i className="fas fa-bell icon-lg text-primary"></i></span>

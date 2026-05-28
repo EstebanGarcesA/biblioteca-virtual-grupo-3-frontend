@@ -40,6 +40,9 @@
 .add-edit-form input[type="tel"],
 .add-edit-form input[type="email"],
 .add-edit-form input[type="date"],
+.add-edit-form input[type="password"],
+.add-edit-form input[type="number"],
+.add-edit-form input[type="url"],
 .add-edit-form select,
 .add-edit-form textarea {
     width: 100%;
@@ -56,6 +59,9 @@
 .add-edit-form input[type="tel"]:focus,
 .add-edit-form input[type="email"]:focus,
 .add-edit-form input[type="date"]:focus,
+.add-edit-form input[type="password"]:focus,
+.add-edit-form input[type="number"]:focus,
+.add-edit-form input[type="url"]:focus,
 .add-edit-form select:focus,
 .add-edit-form textarea:focus {
     outline: none;
